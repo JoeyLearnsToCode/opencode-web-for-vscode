@@ -4,75 +4,91 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.x-blue)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-一款用可以在侧边栏使用 OpenCode web 功能的 VSCode 扩展。
+**Languages:** **English** | [简体中文](README.zh-cn.md)
 
-## 特性
+A VSCode extension that integrates OpenCode Web functionality into the sidebar.
 
-- 🖥️ **侧边栏集成**：在 VSCode 侧边栏显示 OpenCode Web 界面
-- 🚀 **快速启动**：通过单个命令直接从 VSCode 启动 OpenCode
-- 📝 **代码集成**：将选中的代码片段连同上下文一起发送到 OpenCode TUI
-- ⚙️ **可配置**：自定义端口
-- 🔄 **进程管理**：支持重启和停止 OpenCode 进程
+## Features
 
-## 安装
+- 🌐 **Multi-language Support**: Supports English, Simplified Chinese, Japanese, and Korean, automatically following VSCode interface language
+- 🖥️ **Sidebar Integration**: Display OpenCode Web interface in VSCode sidebar
+- 🚀 **Quick Launch**: Launch OpenCode directly from VSCode with a single command
+- 📝 **Code Integration**: Send selected code snippets along with context to OpenCode TUI
+- ⚙️ **Configurable**: Customize port and language settings
+- 🔄 **Process Management**: Support restarting and stopping OpenCode processes
 
-### 前置要求
+## Installation
 
-1. 全局安装 [OpenCode](https://github.com/opencode-ai/opencode)：
+### Prerequisites
+
+1. Globally install [OpenCode](https://github.com/opencode-ai/opencode):
    ```bash
    npm install -g opencode-ai
    ```
 
-2. 从 VSCode 市场安装此扩展（搜索 "OpenCode Web Integration"）
+2. Install this extension from VSCode Marketplace (search "OpenCode Web Integration")
 
-## 使用
+## Usage
 
-### 启动 OpenCode
+### Launch OpenCode
 
-1. 左侧栏使用 OpenCode Web
-<img src="https://raw.githubusercontent.com/liangqiangWang/opencode-web-for-vscode/master/screenshot/side_view.png" width="600"/>
+1. Use OpenCode Web in the left sidebar
+   <img src="https://raw.githubusercontent.com/liangqiangWang/opencode-web-for-vscode/master/screenshot/side_view.png" width="600"/>
 
-2. 在编辑器区域使用 OpenCode Web
-除了左侧栏，也可以在编辑器区域显示
-<img src="https://raw.githubusercontent.com/liangqiangWang/opencode-web-for-vscode/master/screenshot/main_web_view.png" width="600"/>
+2. Use OpenCode Web in the editor area
+   Besides the left sidebar, you can also display it in the editor area
+   <img src="https://raw.githubusercontent.com/liangqiangWang/opencode-web-for-vscode/master/screenshot/main_web_view.png" width="600"/>
 
-### 发送代码到 OpenCode TUI 输入框
-1. 在编辑器中选择代码
-2. 右键点击并选择 `添加到 OpenCode 终端`
-3. 选中的代码将连同文件上下文一起发送到 OpenCode
-<img src="https://raw.githubusercontent.com/liangqiangWang/opencode-web-for-vscode/master/screenshot/send_data.png" width="600"/>
+### Send Code to OpenCode TUI
 
-### 进程管理
+1. Select code in the editor
+2. Right-click and select `Append to OpenCode Terminal`
+3. Selected code will be sent to OpenCode along with file context
+   <img src="https://raw.githubusercontent.com/liangqiangWang/opencode-web-for-vscode/master/screenshot/send_data.png" width="600"/>
+
+### Process Management
 
 <img src="https://raw.githubusercontent.com/liangqiangWang/opencode-web-for-vscode/master/screenshot/menu_view.png" width="600"/>
 
-在侧边栏顶部工具栏：
-- **刷新连接**：刷新 OpenCode Web 页面
-- **打开 TUI 终端**：在右侧编辑器区域打开终端
-- **更多操作**：
-  - 在编辑器中打开
-  - 在浏览器中打开
-  - 查看帮助
-  - **进程管理**：
-    - 重启进程
-    - 停止进程
+In the sidebar toolbar:
+- **Refresh Connection**: Refresh the OpenCode Web page
+- **Open TUI Terminal**: Open terminal in the right editor area
+- **More Actions**:
+  - Open in Editor
+  - Open in Browser
+  - View Help
+  - **Process Management**:
+    - Restart Process
+    - Stop Process
 
-## 配置
+## Configuration
 
-你可以在 VSCode 设置中配置此扩展：
+You can configure this extension in VSCode Settings:
 
-| 设置 | 类型 | 默认值 | 描述 |
-|------|------|--------|------|
-| `opencode.port` | number | `4099` | OpenCode 服务器端口 |
-| `opencode.timeout` | number | `5000` | 连接超时时间（毫秒） |
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `opencode.port` | number | `4099` | OpenCode server port |
+| `opencode.timeout` | number | `5000` | Connection timeout (milliseconds) |
+| `opencode.language` | string | `auto` | Interface language (`auto`/`en`/`zh-cn`/`ja`/`ko`) |
 
+### Language Switching
 
+The extension supports the following languages:
+- **Auto**: Follow VSCode interface language
+- **English (en)**
+- **Simplified Chinese (zh-cn)**
+- **Japanese (ja)**
+- **Korean (ko)**
 
-## 许可证
+You can switch languages through:
+1. Modify the `opencode.language` configuration in settings
+2. Click the language switch button in the top-right corner of the Webview (when OpenCode is running)
+3. Via the sidebar "More Actions" menu → "Change Language"
+
+## License
 
 MIT
 
-## 支持
+## Support
 
-如有问题和功能建议，请访问 [GitHub 仓库](https://github.com/liangqiangWang/opencode-web-for-vscode)。
-
+For issues and feature requests, please visit the [GitHub repository](https://github.com/liangqiangWang/opencode-web-for-vscode).

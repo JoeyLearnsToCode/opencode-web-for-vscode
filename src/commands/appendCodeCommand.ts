@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { OpenCodeManager } from '../core/OpenCodeManager';
+import { l10n } from '../l10n';
 
 /**
  * 添加代码到 OpenCode 命令
@@ -11,14 +12,14 @@ export function registerAppendCodeCommand(
   return vscode.commands.registerCommand('opencode-web.appendCode', async () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
-      vscode.window.showWarningMessage('No active editor');
+      vscode.window.showWarningMessage(l10n.t('message.noActiveEditor'));
       return;
     }
 
     // 获取选中的代码
     const data = manager.getFileReference(editor);
     if (!data) {
-      vscode.window.showWarningMessage('Please select code first');
+      vscode.window.showWarningMessage(l10n.t('message.pleaseSelectCode'));
       return;
     }
 

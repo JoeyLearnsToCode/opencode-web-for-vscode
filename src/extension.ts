@@ -4,6 +4,7 @@ import { registerAllCommands } from './commands';
 import { registerWebviewCommands } from './commands/webviewCommands';
 import { OpencodeWebviewProvider } from './views/webview/WebviewProvider';
 import { ConfigurationService } from './services/configuration';
+import { l10n } from './l10n';
 
 // 保存 OpenCodeManager 实例引用，用于 deactivate 清理
 let openCodeManager: OpenCodeManager;
@@ -14,16 +15,28 @@ let openCodeManager: OpenCodeManager;
 export function activate(context: vscode.ExtensionContext) {
   console.log('OpenCode Integration extension is now active!');
 
+  // 初始化 L10n（同步加载语言包）
+  l10n.setContext(context);
+  console.log('L10n initialized with language:', l10n.getLanguage());
+
   // 初始化配置服务
   const configService = ConfigurationService.getInstance();
 
   // 监听配置变化
-  const configDisposable = configService.onDidChangeConfiguration((event) => {
+  const configDisposable = configService.onDidChangeConfiguration(async (event) => {
     // 重新加载配置
     if (event.affectsConfiguration('opencode.port') ||
         event.affectsConfiguration('opencode.timeout')) {
       console.log('OpenCode configuration changed');
       // 可以在这里触发配置重新加载
+    }
+
+    // 监听语言配置变化
+    if (event.affectsConfiguration('opencode.language')) {
+      console.log('OpenCode language changed, reloading L10n');
+      await l10n.reload();
+      // 通知 webview 刷新
+      vscode.commands.executeCommand('opencode-web.refreshWebview');
     }
   });
   context.subscriptions.push(configDisposable);

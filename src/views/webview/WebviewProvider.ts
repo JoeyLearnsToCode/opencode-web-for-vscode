@@ -10,6 +10,7 @@ import { OpenCodeManager } from '../../core/OpenCodeManager';
 import { getEventManager, OpenCodeEventManager } from '../../core/EventManager';
 import { ProcessStateChangeEvent, ConnectionChangeEvent, EventType } from '../../core/eventTypes';
 import { OpenCodeStatus } from '../../core/types';
+import { l10n } from '../../l10n';
 
 /**
  * Webview 视图类型常量
@@ -88,25 +89,25 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
         this.isStarting = false;
         this.isRestarting = false;
         this.isConnected = false;
-        this.setState('error', 'OpenCode 未启动');
+        this.setState('error', l10n.t('status.notRunning'));
         break;
       case OpenCodeStatus.NotInstalled:
         this.isStarting = false;
         this.isRestarting = false;
         this.isConnected = false;
         this.isInstalled = false;
-        this.setState('notInstalled', 'OpenCode 未安装');
+        this.setState('notInstalled', l10n.t('status.notInstalled'));
         break;
       case OpenCodeStatus.Restarting:
         this.isRestarting = true;
         this.isStarting = false;
-        this.setState('restarting', '正在重启 OpenCode...');
+        this.setState('restarting', l10n.t('status.restarting'));
         break;
       case OpenCodeStatus.Error:
         this.isStarting = false;
         this.isRestarting = false;
         this.isConnected = false;
-        this.setState('error', data.error || 'OpenCode 发生错误');
+        this.setState('error', data.error || l10n.t('status.error'));
         break;
     }
   }
@@ -124,7 +125,7 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
         this.log('正在启动/重启中，忽略连接断开事件');
         return;
       }
-      this.setState('error', 'OpenCode 未启动');
+      this.setState('error', l10n.t('status.notRunning'));
     }
   }
 
@@ -178,13 +179,13 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
     if (this.isConnected) {
       this.setState('ready', '');
     } else if (this.isRestarting) {
-      this.setState('restarting', '正在重启 OpenCode...');
+      this.setState('restarting', l10n.t('status.restarting'));
     } else if (this.isStarting) {
-      this.setState('loading', '正在启动 OpenCode...');
+      this.setState('loading', l10n.t('status.starting'));
     } else if (this.isInstalled) {
-      this.setState('error', 'OpenCode 未启动');
+      this.setState('error', l10n.t('status.notRunning'));
     } else {
-      this.setState('notInstalled', 'OpenCode 未安装');
+      this.setState('notInstalled', l10n.t('status.notInstalled'));
     }
   }
 
@@ -196,15 +197,19 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
     _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken
   ): void {
+    this.log('========== resolveWebviewView 被调用 ==========');
     this.webviewView = webviewView;
 
     // 检查 HTML 是否为空（重载窗口时 HTML 会被清空）
     const isHtmlEmpty = !webviewView.webview.html || webviewView.webview.html.trim() === '';
 
-    // 如果 HTML 为空，需要重置初始化状态
-    if (isHtmlEmpty && this.isInitialized) {
-      this.log('检测到 HTML 为空但 isInitialized 为 true，重置初始化状态');
+    // 调试模式或 HTML 为空时，重置初始化状态
+    if (isHtmlEmpty || !this.isInitialized) {
+      this.log(`重置初始化状态 - HTML为空: ${isHtmlEmpty}, 已初始化: ${this.isInitialized}`);
       this.isInitialized = false;
+      this.isStarting = false;
+      this.isRestarting = false;
+      this.initializationLock = undefined;
     }
 
     // 检查是否已经初始化过
@@ -263,6 +268,16 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
     if (needsHtmlUpdate) {
       this.updateWebview();
       this.log('HTML 已重新设置，等待 ready 消息');
+
+      // 添加超时检测：如果 5 秒后仍未初始化，强制重试
+      setTimeout(() => {
+        if (!this.isInitialized) {
+          this.log('警告：5 秒后仍未初始化，强制重置状态');
+          this.isInitialized = false;
+          this.isStarting = false;
+          this.initializationLock = undefined;
+        }
+      }, 5000);
     } else {
       this.log('Webview HTML 已存在，保持当前状态');
     }
@@ -293,11 +308,11 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
           if (this.isConnected) {
             this.setState('ready', '');
           } else if (this.isStarting) {
-            this.setState('loading', '正在启动 OpenCode...');
+            this.setState('loading', l10n.t('status.starting'));
           } else if (this.isInstalled) {
-            this.setState('error', 'OpenCode 未启动');
+            this.setState('error', l10n.t('status.notRunning'));
           } else {
-            this.setState('notInstalled', 'OpenCode 未安装');
+            this.setState('notInstalled', l10n.t('status.notInstalled'));
           }
         }
         break;
@@ -328,6 +343,11 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
         // 显示帮助面板
         await this.showHelpPanel();
         break;
+
+      case 'changeLanguage':
+        // 打开语言设置
+        vscode.commands.executeCommand('workbench.action.openSettings', 'opencode.language');
+        break;
     }
   }
 
@@ -335,6 +355,9 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
    * 初始化 OpenCode（带初始化锁，防止并发初始化）
    */
   private async initializeOpenCode(): Promise<void> {
+    this.log('========== initializeOpenCode 开始 ==========');
+    this.log(`当前状态 - isInitialized: ${this.isInitialized}, isStarting: ${this.isStarting}, isConnected: ${this.isConnected}`);
+
     // 如果已有初始化正在进行，等待它完成
     if (this.initializationLock) {
       this.log('初始化正在进行中，等待现有初始化完成...');
@@ -349,6 +372,7 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
 
     // 创建新的初始化 Promise
     const currentVersion = ++this.initializationVersion;
+    this.log(`创建新的初始化 Promise，版本: ${currentVersion}`);
 
     this.initializationLock = (async () => {
       try {
@@ -357,18 +381,22 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
         // 等待 webview JavaScript 完全加载
         // 防止消息在 webview 准备好之前发送
         await new Promise(resolve => setTimeout(resolve, 200));
+        this.log('Webview JavaScript 加载等待完成');
 
         // 设置初始化标志，防止重复初始化
         this.isInitialized = true;
+        this.log('设置 isInitialized = true');
 
         // 使用 OpenCodeManager 的统一状态检查
         this.log('检查 OpenCode 状态（通过 OpenCodeManager）...');
 
         // 先显示加载状态
-        this.setState('loading', '正在检查 OpenCode 状态...');
+        this.setState('loading', l10n.t('status.checkingStatus'));
+        this.log('已设置 loading 状态');
 
         // 通过 OpenCodeManager 获取状态（已包含安装检查）
         const status = await this.openCodeManager.getStatus();
+        this.log(`getStatus() 返回: ${status}`);
 
         // 检查是否已被新的初始化取代
         if (currentVersion !== this.initializationVersion) {
@@ -383,13 +411,13 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
           case OpenCodeStatus.NotInstalled:
             this.isInstalled = false;
             this.isConnected = false;
-            this.setState('notInstalled', 'OpenCode 未安装');
+            this.setState('notInstalled', l10n.t('status.notInstalled'));
             break;
 
           case OpenCodeStatus.NotRunning:
             this.isInstalled = true;
             this.isConnected = false;
-            this.setState('error', 'OpenCode 未启动');
+            this.setState('error', l10n.t('status.notRunning'));
             break;
 
           case OpenCodeStatus.Running:
@@ -400,11 +428,11 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
 
           default:
             this.log(`未知状态: ${status}`);
-            this.setState('error', '未知的 OpenCode 状态');
+            this.setState('error', l10n.t('message.unknownState'));
         }
       } catch (error) {
         this.log(`初始化失败: ${error}`);
-        this.setState('error', `初始化失败: ${error}`);
+        this.setState('error', l10n.t('message.initFailed', error));
       } finally {
         // 清除初始化锁
         this.initializationLock = undefined;
@@ -428,19 +456,19 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
       if (!workspaceFolders || workspaceFolders.length === 0) {
         this.log('没有打开的工作区');
         this.isStarting = false;
-        this.setState('error', '请先打开一个工作区（文件夹）后再启动 OpenCode');
+        this.setState('error', l10n.t('message.noWorkspace'));
         return;
       }
 
       // 立即显示启动中状态
-      this.setState('loading', '正在启动 OpenCode...');
+      this.setState('loading', l10n.t('status.starting'));
 
       // 在后台启动
       const success = await this.openCodeManager.startInBackground();
 
       if (success) {
         this.log('OpenCode 启动成功，等待连接检查...');
-        this.setState('loading', '等待 OpenCode 就绪...');
+        this.setState('loading', l10n.t('status.waiting'));
 
         // 等待3秒后检查连接
         setTimeout(async () => {
@@ -452,18 +480,18 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
             this.setState('ready', '');
           } else {
             this.log('连接失败');
-            this.setState('error', '启动超时，请手动检查');
+            this.setState('error', l10n.t('message.startTimeout'));
           }
         }, 3000);
       } else {
         this.log('OpenCode 启动失败');
         this.isStarting = false; // 清除启动状态
-        this.setState('error', '启动失败，请检查日志');
+        this.setState('error', l10n.t('message.startFailed'));
       }
     } catch (error) {
       this.log(`启动失败: ${error}`);
       this.isStarting = false; // 清除启动状态
-      this.setState('error', `启动失败: ${error}`);
+      this.setState('error', l10n.t('message.startFailed', error));
     }
   }
 
@@ -490,7 +518,7 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
     if (connected) {
       this.setState('ready', '');
     } else {
-      this.setState('error', '连接已断开');
+      this.setState('error', l10n.t('status.disconnected'));
     }
   }
 
@@ -563,8 +591,15 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
    * 获取 Webview HTML 内容 - 简化版本
    */
   private getWebviewContent(url: string): string {
+    // 获取语言包并转换为 JSON 字符串
+    const bundle = l10n.getBundle();
+    const bundleJson = JSON.stringify(bundle);
+    const language = l10n.getLanguage();
+
+    this.log(`生成 Webview HTML，语言: ${language}，bundle 大小: ${bundleJson.length}`);
+
     return `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="${language}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -689,6 +724,31 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
       transform: scale(1.1);
     }
 
+    /* 语言切换浮动按钮 */
+    .language-toggle-button {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      width: 36px;
+      height: 36px;
+      border: none;
+      background-color: var(--vscode-button-secondaryBackground);
+      color: var(--vscode-button-secondaryForeground);
+      cursor: pointer;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    .language-toggle-button:hover {
+      background-color: var(--vscode-button-secondaryHoverBackground);
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
     .spin {
       animation: spin 1s linear infinite;
     }
@@ -774,13 +834,42 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
     <div class="webview-container" id="webviewContainer">
       <div class="status-container">
         <div class="loading-spinner"></div>
-        <div class="status-text">正在初始化...</div>
+        <div class="status-text">${l10n.t('status.initializing')}</div>
       </div>
     </div>
   </div>
 
   <script>
+    console.log('=== 脚本开始执行 ===');
+
+    // 注入语言包
+    try {
+      window.L10N_BUNDLE = ${bundleJson};
+      window.L10N_LANGUAGE = '${language}';
+      console.log('语言包注入成功，语言:', window.L10N_LANGUAGE);
+
+      // Webview 端翻译函数
+      function t(key, ...args) {
+        const keys = key.split('.');
+        let value = window.L10N_BUNDLE;
+
+        for (const k of keys) {
+          value = value?.[k];
+        }
+
+        if (typeof value !== 'string') return key;
+        return value.replace(/\{(\d+)\}/g, (_, index) => args[index] ?? '');
+      }
+    } catch (error) {
+      console.error('语言包加载失败:', error);
+      // 提供默认翻译函数
+      function t(key, ...args) {
+        return key;
+      }
+    }
+
     const vscode = acquireVsCodeApi();
+    console.log('vscode API 已获取:', typeof vscode !== 'undefined');
     const SAVED_STATE_KEY = 'opencodeState';
     const STATE_EXPIRY_MS = 300000; // 5分钟有效期
 
@@ -836,7 +925,20 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
       const container = document.getElementById('webviewContainer');
 
       if (state === 'ready') {
-        container.innerHTML = '<iframe src="${url}" frameborder="0" id="opencodeFrame"></iframe>';
+        container.innerHTML = \`
+          <iframe src="\${url}" frameborder="0" id="opencodeFrame"></iframe>
+          <button class="language-toggle-button" id="languageButton" title="\${t('button.changeLanguage')}">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor">
+              <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/>
+            </svg>
+          </button>
+        \`;
+        const langBtn = document.getElementById('languageButton');
+        if (langBtn) {
+          langBtn.addEventListener('click', () => {
+            vscode.postMessage({ type: 'changeLanguage' });
+          });
+        }
       } else if (state === 'error') {
         container.innerHTML = \`
           <div class="modern-error-container">
@@ -846,13 +948,13 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
                 <path d="M15 15 L33 33 M33 15 L15 33" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
-            <h2 class="error-title">当前状态</h2>
-            <p class="error-description">\${message || 'OpenCode 服务当前未运行'}</p>
+            <h2 class="error-title">\${t('status.error')}</h2>
+            <p class="error-description">\${message || t('message.serviceNotRunning')}</p>
             <button class="action-button" id="startButton">
               <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor">
                 <path d="M8 5v14l11-7z"/>
               </svg>
-              启动 OpenCode
+              \${t('button.start')}
             </button>
           </div>
         \`;
@@ -864,7 +966,7 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
               <svg class="spin" viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor">
                 <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="32" stroke-linecap="round"/>
               </svg>
-              正在启动...
+              \${t('button.starting')}
             \`;
             vscode.postMessage({ type: 'startOpencode' });
           });
@@ -892,13 +994,13 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
                 <path d="M15 15 L33 33 M33 15 L15 33" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
-            <h2 class="error-title">OpenCode 未安装</h2>
-            <p class="error-description">\${message || '请先安装 OpenCode CLI 工具'}</p>
+            <h2 class="error-title">\${t('status.notInstalled')}</h2>
+            <p class="error-description">\${message || t('message.pleaseInstall')}</p>
             <button class="action-button" id="helpButton">
               <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
               </svg>
-              查看帮助
+              \${t('button.help')}
             </button>
           </div>
         \`;
@@ -920,10 +1022,10 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
           setState(message.state, message.message);
           break;
         case 'error':
-          setState('error', message.message || '无法连接到 OpenCode');
+          setState('error', message.message || t('status.disconnected'));
           break;
         case 'loading':
-          setState('loading', message.message || '正在加载...');
+          setState('loading', message.message || t('status.loading'));
           break;
         case 'ready':
           // 这个消息不应该出现，所有状态都应该通过 'setState' 来设置
@@ -933,7 +1035,13 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
     });
 
     window.addEventListener('load', () => {
-      console.log('页面加载完成');
+      console.log('=== 页面 load 事件触发 ===');
+      console.log('vscode API 可用:', typeof vscode !== 'undefined');
+      console.log('当前状态:', {
+        isInitialized: false,
+        language: window.L10N_LANGUAGE,
+        bundleKeys: Object.keys(window.L10N_BUNDLE || {}).length
+      });
 
       // 检查是否有保存的有效状态
       const savedState = loadState();
@@ -946,9 +1054,15 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
         // 首次加载或状态过期，发送 ready 消息
         console.log('首次加载或状态过期，初始化...');
         setTimeout(() => {
+          console.log('=== 发送 ready 消息 ===');
           vscode.postMessage({ type: 'ready' });
         }, 100);
       }
+    });
+
+    // 添加 DOMContentLoaded 作为备用
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('=== DOMContentLoaded 事件触发 ===');
     });
   </script>
 </body>
@@ -1053,7 +1167,7 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
    * 显示安装指南
    */
   public async showInstallGuide(): Promise<void> {
-    this.postMessageToWebview({ type: 'setState', state: 'error', message: '请先安装 OpenCode' });
+    this.postMessageToWebview({ type: 'setState', state: 'error', message: l10n.t('message.pleaseInstall') });
   }
 
   /**
@@ -1097,17 +1211,29 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
 
   /**
    * 生成帮助文档内容
-   * 从独立的 HTML 文件读取帮助文档
+   * 从独立的 HTML 文件读取帮助文档，支持多语言
    */
   private async getHelpContent(): Promise<string> {
     try {
-      const helpUri = vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'help.html');
+      const currentLang = l10n.getLanguage();
+      const helpFileName = `help.${currentLang}.html`;
+      this.log(`Loading help file: ${helpFileName}`);
+
+      const helpUri = vscode.Uri.joinPath(this.context.extensionUri, 'resources', helpFileName);
       const helpData = await vscode.workspace.fs.readFile(helpUri);
       const helpText = Buffer.from(helpData).toString('utf-8');
       return helpText;
     } catch (error) {
-      this.log(`读取帮助文档失败: ${error}`);
-      return this.getFallbackHelpContent();
+      this.log(`读取帮助文档失败: ${error}，尝试英文版本`);
+      try {
+        const helpUri = vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'help.en.html');
+        const helpData = await vscode.workspace.fs.readFile(helpUri);
+        const helpText = Buffer.from(helpData).toString('utf-8');
+        return helpText;
+      } catch {
+        this.log(`英文版本也加载失败，使用备用内容`);
+        return this.getFallbackHelpContent();
+      }
     }
   }
 
@@ -1116,10 +1242,10 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
    */
   private getFallbackHelpContent(): string {
     return `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="${l10n.getLanguage()}">
 <head>
   <meta charset="UTF-8">
-  <title>OpenCode 帮助</title>
+  <title>${l10n.t('help.title')}</title>
   <style>
     body {
       font-family: var(--vscode-font-family);
@@ -1130,8 +1256,8 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
   </style>
 </head>
 <body>
-  <h1>无法加载帮助文档</h1>
-  <p>帮助文档文件不存在或无法读取。请重新安装扩展。</p>
+  <h1>${l10n.t('help.unableToLoad')}</h1>
+  <p>${l10n.t('help.helpFileNotFound')}</p>
 </body>
 </html>`;
   }
@@ -1149,7 +1275,7 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
     }
 
     // 显示加载状态
-    this.setState('loading', '正在刷新...');
+    this.setState('loading', l10n.t('status.refreshing'));
 
     try {
       // 使用 Promise.race 添加超时保护
@@ -1177,21 +1303,21 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
         } else {
           // 进程运行但连接失败
           this.log('OpenCode 进程运行但连接失败');
-          this.setState('error', 'OpenCode 需要重启');
+          this.setState('error', l10n.t('message.restartFailed', 'OpenCode'));
         }
       } else {
         // 未启动或未安装，显示相应的启动界面
         this.log(`OpenCode 状态: ${status}`);
         if (status === OpenCodeStatus.NotInstalled) {
-          this.setState('notInstalled', 'OpenCode 未安装');
+          this.setState('notInstalled', l10n.t('status.notInstalled'));
         } else {
-          this.setState('error', 'OpenCode 未启动');
+          this.setState('error', l10n.t('status.notRunning'));
         }
       }
     } catch (error) {
       this.log(`刷新过程中出错: ${error}`);
       // 出错时显示未启动状态
-      this.setState('error', 'OpenCode 未启动');
+      this.setState('error', l10n.t('status.notRunning'));
     }
   }
 

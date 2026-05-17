@@ -3,6 +3,7 @@
 'use strict';
 
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 /**@type {import('webpack').Configuration}*/
 const config = {
@@ -37,6 +38,18 @@ const config = {
         ]
       }
     ]
-  }
+  },
+  plugins: [
+    // 复制语言包文件到 dist 目录
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: 'resources/l10n/*.json',
+          to: 'resources/l10n/[name][ext]',
+          context: 'src/'
+        }
+      ]
+    })
+  ]
 };
 module.exports = config;

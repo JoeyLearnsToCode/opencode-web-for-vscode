@@ -13,7 +13,8 @@ export type WebviewMessage =
   | { type: 'openInBrowser' }
   | { type: 'toggleSidebar' }
   | { type: 'openTui' }
-  | { type: 'showHelp' };
+  | { type: 'showHelp' }
+  | { type: 'changeLanguage' };
 
 /**
  * Webview 回调函数接口

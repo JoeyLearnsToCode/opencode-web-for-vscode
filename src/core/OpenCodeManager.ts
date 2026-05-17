@@ -21,6 +21,7 @@ import {
   WorkspaceError
 } from '../common/errors';
 import { getEventManager } from './EventManager';
+import { l10n } from '../l10n';
 
 const execAsync = promisify(exec);
 
@@ -90,12 +91,12 @@ export class OpenCodeManager {
     const isInstalled = await this.checkOpenCodeInstalled();
     if (!isInstalled) {
       const install = await vscode.window.showWarningMessage(
-        'OpenCode is not installed. Do you want to install it?',
-        'Install',
-        'Cancel'
+        l10n.t('message.openCodeNotInstalled'),
+        l10n.t('message.install'),
+        l10n.t('message.cancel')
       );
 
-      if (install === 'Install') {
+      if (install === l10n.t('message.install')) {
         await this.installOpenCode();
       }
       return;
@@ -129,11 +130,11 @@ export class OpenCodeManager {
    */
   public async start(workspacePath: string): Promise<void> {
     if (!workspacePath) {
-      throw new WorkspaceError('Please open a workspace first');
+      throw new WorkspaceError(l10n.t('message.pleaseOpenWorkspace'));
     }
 
     // 不再显示启动消息，避免打扰用户
-    // vscode.window.showInformationMessage('Starting OpenCode...');
+    // vscode.window.showInformationMessage(l10n.t('status.starting'));
 
     // 创建终端
     const terminal = this.createOpenCodeTerminal(workspacePath);
@@ -146,7 +147,7 @@ export class OpenCodeManager {
     // 等待服务就绪
     const isReady = await this.waitForReady();
     if (!isReady) {
-      vscode.window.showErrorMessage('OpenCode start timeout');
+      vscode.window.showErrorMessage(l10n.t('message.openCodeStartTimeout'));
       throw new OpenCodeTimeoutError(this.config.healthCheckTimeout);
     }
 
@@ -160,7 +161,7 @@ export class OpenCodeManager {
   public async startInBackground(): Promise<boolean> {
     const workspacePath = this.getWorkspacePath();
     if (!workspacePath) {
-      const message = '请先打开一个工作区（文件夹）后再启动 OpenCode';
+      const message = l10n.t('message.noWorkspace');
       this.log(`无法启动 OpenCode: ${message}`);
       this.eventManager.emitProcessError(message);
       return false;
@@ -204,7 +205,7 @@ export class OpenCodeManager {
 
       if (!isReady) {
         this.log('OpenCode 启动超时');
-        this.eventManager.emitProcessError('启动超时');
+        this.eventManager.emitProcessError(l10n.t('message.startTimeout'));
         return false;
       }
 
@@ -216,7 +217,7 @@ export class OpenCodeManager {
 
       if (!finalCheck) {
         this.log('OpenCode 连接检查失败');
-        this.eventManager.emitProcessError('连接检查失败');
+        this.eventManager.emitProcessError(l10n.t('message.startFailed'));
         return false;
       }
 
@@ -237,7 +238,7 @@ export class OpenCodeManager {
       return true;
     } catch (error) {
       this.log(`OpenCode 后台启动失败: ${error}`);
-      this.eventManager.emitProcessError(`启动失败: ${error}`);
+      this.eventManager.emitProcessError(l10n.t('message.startFailed', error));
       return false;
     }
   }
@@ -247,7 +248,7 @@ export class OpenCodeManager {
    */
   public async attach(workspacePath: string): Promise<void> {
     if (!workspacePath) {
-      throw new WorkspaceError('Please open a workspace first');
+      throw new WorkspaceError(l10n.t('message.pleaseOpenWorkspace'));
     }
 
     // 创建终端
@@ -261,7 +262,7 @@ export class OpenCodeManager {
     // 等待服务就绪
     const isReady = await this.waitForReady();
     if (!isReady) {
-      vscode.window.showErrorMessage('OpenCode attach timeout');
+      vscode.window.showErrorMessage(l10n.t('message.openCodeAttachTimeout'));
       throw new OpenCodeTimeoutError(this.config.healthCheckTimeout);
     }
 
@@ -274,7 +275,7 @@ export class OpenCodeManager {
    */
   async sendPromptToTUI(content: string): Promise<void> {
     if (!content) {
-      vscode.window.showErrorMessage('No content to send');
+      vscode.window.showErrorMessage(l10n.t('message.noContentToSend'));
       return;
     }
 
@@ -284,9 +285,9 @@ export class OpenCodeManager {
       const success = await this.startInBackground();
       if (success) {
         await new Promise(resolve => setTimeout(resolve, 2000)); // 等待启动完成
-        // vscode.window.showInformationMessage('OpenCode is ready');
+        // vscode.window.showInformationMessage(l10n.t('status.ready'));
       } else {
-        vscode.window.showErrorMessage('Failed to start OpenCode');
+        vscode.window.showErrorMessage(l10n.t('message.failedToStart'));
         return;
       }
     }
@@ -294,12 +295,12 @@ export class OpenCodeManager {
     // 确保 TUI 终端显示（如果已存在就显示，不存在就创建）
     await this.showTui();
 
-    vscode.window.showInformationMessage('Sending code to OpenCode...');
+    vscode.window.showInformationMessage(l10n.t('message.sendingCode'));
 
     // 添加 prompt
     const appendSuccess = await this.client.appendPrompt(content);
     if (!appendSuccess) {
-      vscode.window.showErrorMessage('Failed to send code to OpenCode');
+      vscode.window.showErrorMessage(l10n.t('message.failedToSend'));
       return;
     }
 
@@ -309,9 +310,9 @@ export class OpenCodeManager {
     // 再自动提交 prompt
     const submitSuccess = await this.client.submitPrompt();
     if (submitSuccess) {
-      vscode.window.showInformationMessage('Code sent to OpenCode');
+      vscode.window.showInformationMessage(l10n.t('message.connected'));
     } else {
-      vscode.window.showErrorMessage('Code added, please press Enter to send manually');
+      vscode.window.showErrorMessage(l10n.t('message.codeAdded'));
     }
   }
 
@@ -320,7 +321,7 @@ export class OpenCodeManager {
    */
   async appendPromptToTUI(content: string): Promise<void> {
     if (!content) {
-      vscode.window.showErrorMessage('No content to send');
+      vscode.window.showErrorMessage(l10n.t('message.noContentToSend'));
       return;
     }
 
@@ -330,9 +331,9 @@ export class OpenCodeManager {
       const success = await this.startInBackground();
       if (success) {
         await new Promise(resolve => setTimeout(resolve, 2000)); // 等待启动完成
-        vscode.window.showInformationMessage('OpenCode is ready');
+        vscode.window.showInformationMessage(l10n.t('message.connected'));
       } else {
-        vscode.window.showErrorMessage('Failed to start OpenCode');
+        vscode.window.showErrorMessage(l10n.t('message.failedToStart'));
         return;
       }
     }
@@ -343,10 +344,10 @@ export class OpenCodeManager {
     // 添加prompt
     const appendSuccess = await this.client.appendPrompt(content);
     if (!appendSuccess) {
-      vscode.window.showErrorMessage('Failed to send code to OpenCode');
+      vscode.window.showErrorMessage(l10n.t('message.failedToSend'));
       return;
     }
-    vscode.window.showInformationMessage('已添加数据到 OpenCode 终端...');
+    vscode.window.showInformationMessage(l10n.t('message.dataAdded'));
   }
 
   /**
@@ -569,9 +570,9 @@ export class OpenCodeManager {
       terminal.show();
       const command = isWindows() ? INSTALL_COMMANDS.WINDOWS : INSTALL_COMMANDS.UNIX;
       terminal.sendText(command);
-      vscode.window.showInformationMessage('Installing OpenCode. Please restart VSCode after installation completes.');
+      vscode.window.showInformationMessage(l10n.t('message.installingComplete'));
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to install OpenCode: ${error}`);
+      vscode.window.showErrorMessage(l10n.t('message.installFailed', error));
     }
   }
 
@@ -619,7 +620,7 @@ export class OpenCodeManager {
     const workspacePath = this.getWorkspacePath();
 
     if (!workspacePath) {
-      vscode.window.showErrorMessage('Please open a workspace first');
+      vscode.window.showErrorMessage(l10n.t('message.pleaseOpenWorkspace'));
       return null;
     }
 
@@ -719,7 +720,7 @@ export class OpenCodeManager {
   async showTui(): Promise<void> {
     const workspacePath = this.getWorkspacePath();
     if (!workspacePath) {
-      vscode.window.showErrorMessage('Please open a workspace first');
+      vscode.window.showErrorMessage(l10n.t('message.pleaseOpenWorkspace'));
       return;
     }
 
@@ -1008,8 +1009,8 @@ export class OpenCodeManager {
         timestamp: Date.now(),
         error: String(error)
       });
-      this.eventManager.emitProcessError(`重启失败: ${error}`);
-      vscode.window.showErrorMessage(`重启进程失败: ${error}`);
+      this.eventManager.emitProcessError(l10n.t('message.restartFailed', error));
+      vscode.window.showErrorMessage(l10n.t('message.restartFailed', error));
     }
   }
 }
