@@ -99,8 +99,9 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
           await this.initializeWebview();
         }, 30000);
       } else if (data.status === OpenCodeStatus.Running) {
-        // 清除重启超时定时器
-        this.clearTimers('restart');
+        // 清除所有定时器
+        this.clearTimers('all');
+        this.log('进程运行中，清除所有定时器');
       }
     }
   }
@@ -110,13 +111,19 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
    */
   private handleConnectionChange(data: ConnectionChangeEvent): void {
     if (data.connected) {
+      // 连接成功，清除重启超时定时器
+      this.clearTimers('restart');
       this.currentState = 'ready';
       this.setState('ready', '');
     } else {
-      // 只在非初始化和非重启状态下显示错误
-      if (!this.isInitializing && this.currentState !== 'restarting') {
+      // 连接断开，只在非初始化、非重启、非启动状态下显示错误
+      if (!this.isInitializing && this.currentState !== 'restarting' && this.currentState !== 'initializing') {
         this.currentState = 'error';
         this.setState('error', l10n.t('status.notRunning'));
+      }
+      // 在重启或启动过程中忽略连接断开事件
+      if (this.currentState === 'restarting' || this.currentState === 'initializing') {
+        this.log('重启/启动过程中忽略连接断开事件');
       }
     }
   }
@@ -360,29 +367,20 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
       // 检查工作区
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (!workspaceFolders || workspaceFolders.length === 0) {
-        throw new Error(l10n.t('message.noWorkspace'));
+        this.currentState = 'error';
+        this.setState('error', l10n.t('message.noWorkspace'));
+        return;
       }
 
-      // 在后台启动
+      // 在后台启动（不使用定时器，完全依赖事件系统）
       const success = await this.openCodeManager.startInBackground();
 
       if (success) {
-        this.log('OpenCode 启动成功');
+        this.log('OpenCode 启动成功，等待进程事件...');
         this.setState('loading', l10n.t('status.waiting'));
-
-        // 等待连接验证
-        this.clearTimers('startup');
-        this.timers.startup = setTimeout(async () => {
-          const connected = await this.openCodeManager.checkConnection();
-          if (connected) {
-            this.currentState = 'ready';
-            this.setState('ready', '');
-          } else {
-            this.currentState = 'error';
-            this.setState('error', l10n.t('message.startTimeout'));
-          }
-        }, 3000);
+        // 不使用定时器检查，让事件系统处理状态更新
       } else {
+        this.log('OpenCode 启动失败');
         this.currentState = 'error';
         this.setState('error', l10n.t('message.startFailed'));
       }
