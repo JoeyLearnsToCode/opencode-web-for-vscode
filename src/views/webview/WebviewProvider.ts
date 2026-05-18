@@ -45,7 +45,8 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
     visibility: NodeJS.Timeout | undefined;
     startup: NodeJS.Timeout | undefined;
     restart: NodeJS.Timeout | undefined;
-  } = { visibility: undefined, startup: undefined, restart: undefined };
+    poll: NodeJS.Timeout | undefined;
+  } = { visibility: undefined, startup: undefined, restart: undefined, poll: undefined };
 
   // === 其他 ===
   private outputChannel: vscode.OutputChannel;
@@ -112,9 +113,9 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
           await this.initializeWebview();
         }, 30000);
       } else if (data.status === OpenCodeStatus.Running) {
-        // 清除所有定时器
+        // 清除所有定时器（包括轮询定时器）
         this.clearTimers('all');
-        this.log('进程运行中，清除所有定时器');
+        this.log('进程运行中，清除所有定时器（包括轮询）');
       }
     }
   }
@@ -254,7 +255,7 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
   /**
    * 清理指定类型的定时器
    */
-  private clearTimers(type?: 'visibility' | 'startup' | 'restart' | 'all'): void {
+  private clearTimers(type?: 'visibility' | 'startup' | 'restart' | 'poll' | 'all'): void {
     if (type === 'visibility' || type === 'all') {
       if (this.timers.visibility) {
         clearTimeout(this.timers.visibility);
@@ -271,6 +272,12 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
       if (this.timers.restart) {
         clearTimeout(this.timers.restart);
         this.timers.restart = undefined;
+      }
+    }
+    if (type === 'poll' || type === 'all') {
+      if (this.timers.poll) {
+        clearInterval(this.timers.poll);
+        this.timers.poll = undefined;
       }
     }
   }
@@ -370,6 +377,7 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
 
   /**
    * 启动 OpenCode
+   * 使用混合机制：事件 + 轮询备份
    */
   private async startOpenCode(): Promise<void> {
     try {
@@ -393,39 +401,81 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
         this.setState('loading', l10n.t('status.waiting'));
         // 事件系统会处理后续状态更新
       } else {
-        // 启动失败，但可能是超时导致的，等待几秒后再次检查状态
-        this.log('OpenCode 启动返回失败，等待进程可能仍在启动...');
+        // 启动返回失败，启动轮询检查作为备份
+        this.log('OpenCode 启动返回失败，启动轮询检查机制...');
         this.setState('loading', l10n.t('status.waiting'));
-
-        // 等待 5 秒后再次检查状态
-        setTimeout(async () => {
-          const status = await this.openCodeManager.getStatus();
-          this.log(`延迟检查状态: ${status}`);
-
-          if (status === OpenCodeStatus.Running) {
-            this.currentState = 'ready';
-            this.setState('ready', '');
-          } else if (status === OpenCodeStatus.NotRunning) {
-            // 再检查一次连接，可能只是健康检查超时
-            const connected = await this.openCodeManager.checkConnection(3000);
-            if (connected) {
-              this.currentState = 'ready';
-              this.setState('ready', '');
-            } else {
-              this.currentState = 'error';
-              this.setState('error', l10n.t('message.startTimeout'));
-            }
-          } else {
-            this.currentState = 'error';
-            this.setState('error', l10n.t('message.startFailed'));
-          }
-        }, 5000);
+        await this.pollUntilReady();
       }
     } catch (error) {
       this.log(`启动失败: ${error}`);
       this.currentState = 'error';
       this.setState('error', l10n.t('message.startFailed', String(error)));
     }
+  }
+
+  /**
+   * 轮询检查直到进程就绪
+   * 作为事件系统的备份机制
+   */
+  private async pollUntilReady(): Promise<void> {
+    const maxAttempts = 10; // 最多检查 10 次
+    const interval = 2000; // 每次间隔 2 秒
+    let attempts = 0;
+
+    this.log(`开始轮询检查（最多 ${maxAttempts} 次，间隔 ${interval}ms）`);
+
+    // 清除之前的轮询定时器
+    this.clearTimers('poll');
+
+    this.timers.poll = setInterval(async () => {
+      attempts++;
+      this.log(`轮询检查 ${attempts}/${maxAttempts}`);
+
+      // 检查是否已经就绪（通过事件系统）
+      if (this.currentState === 'ready') {
+        this.log('事件系统已更新状态为 ready，停止轮询');
+        this.clearTimers('poll');
+        return;
+      }
+
+      // 检查进程状态
+      try {
+        const status = await this.openCodeManager.getStatus();
+        this.log(`轮询检查状态: ${status}`);
+
+        if (status === OpenCodeStatus.Running) {
+          // 再验证一次连接
+          const connected = await this.openCodeManager.checkConnection(3000);
+          if (connected) {
+            this.log('轮询检查：进程已就绪');
+            this.clearTimers('poll');
+            this.currentState = 'ready';
+            this.setState('ready', '');
+            return;
+          }
+        }
+
+        // 达到最大尝试次数
+        if (attempts >= maxAttempts) {
+          this.log(`轮询检查达到最大次数 (${maxAttempts})，放弃`);
+          this.clearTimers('poll');
+
+          // 最后一次尝试：直接检查连接
+          const lastCheck = await this.openCodeManager.checkConnection(5000);
+          if (lastCheck) {
+            this.log('最后一次连接检查成功');
+            this.currentState = 'ready';
+            this.setState('ready', '');
+          } else {
+            this.log('所有检查都失败');
+            this.currentState = 'error';
+            this.setState('error', l10n.t('message.startTimeout'));
+          }
+        }
+      } catch (error) {
+        this.log(`轮询检查失败: ${error}`);
+      }
+    }, interval);
   }
 
   /**
