@@ -48,7 +48,8 @@ export function registerWebviewCommands(
       if (confirmed === l10n.t('button.confirm')) {
         try {
           await openCodeManager.killProcess(true, true);
-          vscode.window.showInformationMessage('已终止 OpenCode 进程');
+          // 主动刷新状态以反映进程已终止
+          await webviewProvider.refreshWebview();
         } catch (error) {
           vscode.window.showErrorMessage(l10n.t('message.killFailed', String(error)));
         }
@@ -88,8 +89,8 @@ export function registerWebviewCommands(
       if (confirmed === l10n.t('button.confirm')) {
         try {
           await openCodeManager.restartProcess();
-          // 事件系统会自动通知 WebviewProvider 更新状态
-          // 不再需要显式的 showInformationMessage
+          // 主动刷新状态以反映重启结果
+          await webviewProvider.refreshWebview();
         } catch (error) {
           vscode.window.showErrorMessage(l10n.t('message.restartFailed', error));
         }

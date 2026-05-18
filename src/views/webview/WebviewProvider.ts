@@ -1064,50 +1064,38 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
 
   /**
    * 智能刷新 Webview
+   * 直接使用 HTTP 健康检查，可靠快速
    */
   public async refreshWebview(): Promise<void> {
-    this.log('开始刷新 Webview');
+    this.log('开始刷新 Webview（直接 HTTP 健康检查）');
 
     if (!this.webviewView || !this.webviewView.webview) {
       this.log('Webview 已被释放，无法刷新');
       return;
     }
 
+    // 停止之前的轮询
+    this.clearTimers('poll');
+
     this.setState('loading', l10n.t('status.refreshing'));
 
     try {
-      const statusPromise = this.openCodeManager.getStatus();
-      const timeoutPromise = new Promise<OpenCodeStatus>((resolve) => {
-        setTimeout(() => resolve(OpenCodeStatus.NotRunning), 3000);
-      });
+      // 直接使用 HTTP 健康检查（简单可靠）
+      const isConnected = await this.openCodeManager.checkConnection(5000);
 
-      const status = await Promise.race([statusPromise, timeoutPromise]);
-      this.log(`刷新检查到的状态: ${status}`);
-
-      if (status === OpenCodeStatus.Running) {
-        const isConnected = await this.openCodeManager.checkConnection(2000);
-
-        if (isConnected) {
-          this.log('OpenCode 连接正常，重新加载 iframe');
-          this.updateWebview();
-          setTimeout(() => {
-            this.setState('ready', '');
-          }, 100);
-        } else {
-          this.log('OpenCode 进程运行但连接失败');
-          this.setState('error', l10n.t('message.restartFailed', 'OpenCode'));
-        }
+      if (isConnected) {
+        this.log('刷新：健康检查成功，服务已就绪');
+        this.currentState = 'ready';
+        this.setState('ready', '');
       } else {
-        this.log(`OpenCode 状态: ${status}`);
-        if (status === OpenCodeStatus.NotInstalled) {
-          this.setState('notInstalled', l10n.t('status.notInstalled'));
-        } else {
-          this.setState('error', l10n.t('status.notRunning'));
-        }
+        this.log('刷新：健康检查失败，服务未就绪');
+        this.currentState = 'error';
+        this.setState('error', l10n.t('status.notRunning'));
       }
     } catch (error) {
       this.log(`刷新过程中出错: ${error}`);
-      this.setState('error', l10n.t('status.notRunning'));
+      this.currentState = 'error';
+      this.setState('error', l10n.t('message.refreshFailed', String(error)));
     }
   }
 
