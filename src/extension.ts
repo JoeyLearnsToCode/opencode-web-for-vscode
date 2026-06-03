@@ -25,14 +25,14 @@ export function activate(context: vscode.ExtensionContext) {
   // 监听配置变化
   const configDisposable = configService.onDidChangeConfiguration(async (event) => {
     // 重新加载配置
-    if (event.affectsConfiguration('opencode.port') ||
-        event.affectsConfiguration('opencode.timeout')) {
+    if (event.affectsConfiguration('opencode-web.port') ||
+        event.affectsConfiguration('opencode-web.timeout')) {
       console.log('OpenCode configuration changed');
       // 可以在这里触发配置重新加载
     }
 
     // 监听语言配置变化
-    if (event.affectsConfiguration('opencode.language')) {
+    if (event.affectsConfiguration('opencode-web.language')) {
       console.log('OpenCode language changed, reloading L10n');
       await l10n.reload();
       // 通知 webview 刷新

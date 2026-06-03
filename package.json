@@ -247,19 +247,19 @@
       ]
     },
     "configuration": {
-      "title": "%configuration.title%",
+      "title": "opencode-web",
       "properties": {
-        "opencode.port": {
+        "opencode-web.port": {
           "type": "number",
           "default": 4099,
           "description": "%config.port.description%"
         },
-        "opencode.timeout": {
+        "opencode-web.timeout": {
           "type": "number",
           "default": 5000,
           "description": "%config.timeout.description%"
         },
-        "opencode.language": {
+        "opencode-web.language": {
           "type": "string",
           "enum": [
             "auto",
@@ -278,7 +278,7 @@
           "default": "auto",
           "description": "%config.language.description%"
         },
-        "opencode.killOnExit": {
+        "opencode-web.killOnExit": {
           "type": "boolean",
           "default": true,
           "description": "%config.killOnExit.description%"

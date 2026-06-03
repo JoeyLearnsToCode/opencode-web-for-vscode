@@ -132,21 +132,21 @@ export function registerWebviewCommands(
   // 切换语言
   context.subscriptions.push(
     vscode.commands.registerCommand('opencode-web.changeLanguage', () => {
-      vscode.commands.executeCommand('workbench.action.openSettings', 'opencode.language');
+      vscode.commands.executeCommand('workbench.action.openSettings', 'opencode-web.language');
     })
   );
 
   // 打开设置
   context.subscriptions.push(
     vscode.commands.registerCommand('opencode-web.openSettings', () => {
-      vscode.commands.executeCommand('workbench.action.openSettings', 'opencode');
+      vscode.commands.executeCommand('workbench.action.openSettings', 'opencode-web');
     })
   );
 
   // 调试：显示当前语言状态
   context.subscriptions.push(
     vscode.commands.registerCommand('opencode-web.debugLanguage', () => {
-      const config = vscode.workspace.getConfiguration('opencode');
+      const config = vscode.workspace.getConfiguration('opencode-web');
       const userLanguage = config.get<string>('language');
       const vscodeLang = vscode.env.language;
       const currentLang = l10n.getLanguage();
@@ -154,7 +154,7 @@ export function registerWebviewCommands(
 
       const message = `
 Language Debug Info:
-- User config (opencode.language): ${userLanguage}
+- User config (opencode-web.language): ${userLanguage}
 - VSCode display language: ${vscodeLang}
 - Current active language: ${currentLang}
 - Sample translation "status.checkingStatus": ${sampleTranslation}
@@ -168,7 +168,7 @@ Language Debug Info:
   // 调试：诊断 OpenCode 状态
   context.subscriptions.push(
     vscode.commands.registerCommand('opencode-web.debugStatus', async () => {
-      const config = vscode.workspace.getConfiguration('opencode');
+      const config = vscode.workspace.getConfiguration('opencode-web');
       const port = config.get<number>('port', 4099);
       const timeout = config.get<number>('timeout', 5000);
 
@@ -258,7 +258,7 @@ Language Debug Info:
   context.subscriptions.push(
     vscode.commands.registerCommand('opencode-web.debugProcessHealth', async () => {
       try {
-        const config = vscode.workspace.getConfiguration('opencode');
+        const config = vscode.workspace.getConfiguration('opencode-web');
         const port = config.get<number>('port', 4099);
 
         let diagnosis = `

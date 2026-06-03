@@ -47,7 +47,8 @@
     "pleaseOpenWorkspace": "Please open a workspace first",
     "unknownState": "Unknown OpenCode state",
     "connecting": "Connecting to OpenCode...",
-    "connected": "Connected to OpenCode"
+    "connected": "Connected to OpenCode",
+    "configMigrated": "Settings migrated from old version ({0} settings)"
   },
   "description": {
     "currentStatus": "Current Status",

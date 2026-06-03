@@ -47,7 +47,8 @@
     "pleaseOpenWorkspace": "먼저 작업 공간을 여세요",
     "unknownState": "알 수 없는 OpenCode 상태",
     "connecting": "OpenCode에 연결 중...",
-    "connected": "OpenCode에 연결됨"
+    "connected": "OpenCode에 연결됨",
+    "configMigrated": "이전 버전에서 설정을 마이그레이션했습니다 ({0}개)"
   },
   "description": {
     "currentStatus": "현재 상태",

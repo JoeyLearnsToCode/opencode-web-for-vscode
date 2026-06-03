@@ -47,7 +47,8 @@
     "pleaseOpenWorkspace": "先にワークスペースを開いてください",
     "unknownState": "不明な OpenCode の状態",
     "connecting": "OpenCode に接続中...",
-    "connected": "OpenCode に接続しました"
+    "connected": "OpenCode に接続しました",
+    "configMigrated": "旧バージョンから設定を移行しました（{0} 件）"
   },
   "description": {
     "currentStatus": "現在の状態",

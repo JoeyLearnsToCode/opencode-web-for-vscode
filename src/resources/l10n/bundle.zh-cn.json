@@ -47,7 +47,8 @@
     "pleaseOpenWorkspace": "请先打开一个工作区",
     "unknownState": "未知的 OpenCode 状态",
     "connecting": "正在连接 OpenCode...",
-    "connected": "已连接到 OpenCode"
+    "connected": "已连接到 OpenCode",
+    "configMigrated": "已从旧版本迁移设置（{0} 项）"
   },
   "description": {
     "currentStatus": "当前状态",

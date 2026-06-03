@@ -2,11 +2,20 @@
  * OpenCode 插件常量定义
  */
 
-// 配置键
+// 配置键（新版本）
 export const CONFIG_KEYS = {
+  PORT: 'opencode-web.port',
+  TIMEOUT: 'opencode-web.timeout',
+  KILL_ON_EXIT: 'opencode-web.killOnExit',
+  LANGUAGE: 'opencode-web.language',
+} as const;
+
+// 旧版本配置键（用于迁移）
+export const LEGACY_CONFIG_KEYS = {
   PORT: 'opencode.port',
   TIMEOUT: 'opencode.timeout',
   KILL_ON_EXIT: 'opencode.killOnExit',
+  LANGUAGE: 'opencode.language',
 } as const;
 
 // 默认配置值
