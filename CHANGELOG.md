@@ -2,6 +2,18 @@
 
 [中文版](CHANGELOG.zh-cn.md)
 
+## [0.1.3] - 2025-06-07
+### Features
+- Added option to kill OpenCode process when VSCode closes (`opencode-web.killOnExit`)
+- Added settings menu in sidebar for quick access to extension configuration
+- Detect and connect to externally running OpenCode processes (configure port to match external process)
+- Auto-migrate settings from old `opencode.*` config keys to `opencode-web.*`
+
+### Refactoring
+- Renamed configuration keys from `opencode` to `opencode-web` with automatic migration
+
+---
+
 ## [0.1.2] - 2025-05-23
 ### Features
 - Multi-language support (English, Chinese, Japanese, Korean)
