@@ -241,7 +241,7 @@
       "editor/context": [
         {
           "command": "opencode-web.appendCode",
-          "when": "editorHasSelection",
+          "when": "editorFocus",
           "group": "opencode"
         }
       ]
@@ -282,6 +282,11 @@
           "type": "boolean",
           "default": true,
           "description": "%config.killOnExit.description%"
+        },
+        "opencode-web.terminalStartupDelay": {
+          "type": "number",
+          "default": 0,
+          "description": "%config.terminalStartupDelay.description%"
         }
       }
     }
