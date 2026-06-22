@@ -498,18 +498,25 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
    * 获取 OpenCode URL
    * 单工作区时编码路径为 URL-safe base64 追加到 URL
    * 多工作区或没有工作区时不追加路径
+   * 配置了外部鉴权时附加 auth_token 参数
    */
   private getOpenCodeUrl(): string {
     const port = this.configurationService.getPort();
-    const baseUrl = `http://localhost:${port}`;
+    let url = `http://localhost:${port}`;
 
     const workspaceFolder = this.openCodeManager.getWorkspacePath();
     if (workspaceFolder) {
       const encodedPath = encodePathForUrl(workspaceFolder);
-      return `${baseUrl}/${encodedPath}/session`;
+      url += `/${encodedPath}/session`;
     }
 
-    return baseUrl;
+    const username = this.configurationService.getExternalUsername();
+    const password = this.configurationService.getExternalPassword();
+    if (username && password) {
+      const token = Buffer.from(`${username}:${password}`).toString('base64');
+      url += `?auth_token=${encodeURIComponent(token)}`;
+    }
+    return url;
   }
 
   /**
@@ -999,7 +1006,7 @@ export class OpencodeWebviewProvider implements vscode.WebviewViewProvider, IWeb
   public toggleSidebar(): void {
     if (this.webviewView && !this.webviewPanel) {
       this.createOrShowWebviewPanel();
-    } else if (this.webviewPanel) {
+    } else if (this.webviewPanel && this.webviewPanel.visible) {
       this.webviewPanel.dispose();
       this.webviewPanel = undefined;
     }

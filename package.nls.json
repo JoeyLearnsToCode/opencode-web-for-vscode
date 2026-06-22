@@ -29,5 +29,7 @@
   "config.language.ja.description": "Japanese",
   "config.language.ko.description": "Korean",
   "config.killOnExit.description": "Terminate OpenCode process when closing VSCode",
-  "config.terminalStartupDelay.description": "Terminal startup delay (ms)"
+  "config.terminalStartupDelay.description": "Terminal startup delay (ms)",
+  "config.externalUsername.description": "Username for connecting to external OpenCode process",
+  "config.externalPassword.description": "Password for connecting to external OpenCode process (supports env:VAR_NAME syntax to read from environment variable)"
 }

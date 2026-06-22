@@ -99,6 +99,7 @@
     "no": "아니오",
     "changeLanguage": "언어 변경",
     "connectToProcess": "프로세스에 연결",
-    "connecting": "연결 중..."
+    "connecting": "연결 중...",
+    "openInBrowser": "브라우저에서 열기"
   }
 }

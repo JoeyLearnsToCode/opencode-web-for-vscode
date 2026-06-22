@@ -24,5 +24,7 @@
   "config.language.ja.description": "日本語",
   "config.language.ko.description": "한국어",
   "config.killOnExit.description": "VSCode を閉じる時に OpenCode プロセスを終了する",
-  "config.terminalStartupDelay.description": "端末起動遅延（ミリ秒）"
+  "config.terminalStartupDelay.description": "端末起動遅延（ミリ秒）",
+  "config.externalUsername.description": "外部 OpenCode プロセスに接続するためのユーザー名",
+  "config.externalPassword.description": "外部 OpenCode プロセスに接続するためのパスワード（env:VAR_NAME 構文で環境変数から読み取り可能）"
 }

@@ -99,6 +99,7 @@
     "no": "いいえ",
     "changeLanguage": "言語を変更",
     "connectToProcess": "プロセスに接続",
-    "connecting": "接続中..."
+    "connecting": "接続中...",
+    "openInBrowser": "ブラウザで開く"
   }
 }

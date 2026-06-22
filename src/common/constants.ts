@@ -9,6 +9,8 @@ export const CONFIG_KEYS = {
   KILL_ON_EXIT: 'opencode-web.killOnExit',
   LANGUAGE: 'opencode-web.language',
   TERMINAL_STARTUP_DELAY: 'opencode-web.terminalStartupDelay',
+  EXTERNAL_USERNAME: 'opencode-web.externalUsername',
+  EXTERNAL_PASSWORD: 'opencode-web.externalPassword',
 } as const;
 
 // 旧版本配置键（用于迁移）

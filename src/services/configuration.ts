@@ -101,6 +101,28 @@ export class ConfigurationService {
   }
 
   /**
+   * 获取外部进程连接用户名
+   */
+  public getExternalUsername(): string | undefined {
+    const value = this.getConfig<string>(CONFIG_KEYS.EXTERNAL_USERNAME, '');
+    return value || undefined;
+  }
+
+  /**
+   * 获取外部进程连接密码
+   * 支持字面量或 env:ENV_VAR_NAME 格式从环境变量读取
+   */
+  public getExternalPassword(): string | undefined {
+    const raw = this.getConfig<string>(CONFIG_KEYS.EXTERNAL_PASSWORD, '');
+    if (!raw) return undefined;
+    if (raw.startsWith('env:')) {
+      const envVar = raw.slice(4);
+      return process.env[envVar] || undefined;
+    }
+    return raw;
+  }
+
+  /**
    * 获取配置值
    */
   private getConfig<T>(key: string, defaultValue: T): T {
