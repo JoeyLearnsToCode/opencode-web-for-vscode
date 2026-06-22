@@ -99,6 +99,7 @@
     "no": "否",
     "changeLanguage": "切换语言",
     "connectToProcess": "连接到进程",
-    "connecting": "正在连接..."
+    "connecting": "正在连接...",
+    "openInBrowser": "在浏览器中打开"
   }
 }

@@ -29,5 +29,7 @@
   "config.language.ja.description": "日本語",
   "config.language.ko.description": "한국어",
   "config.killOnExit.description": "关闭 VSCode 时终止 OpenCode 进程",
-  "config.terminalStartupDelay.description": "终端启动延迟（毫秒）"
+  "config.terminalStartupDelay.description": "终端启动延迟（毫秒）",
+  "config.externalUsername.description": "连接外部 OpenCode 进程的用户名",
+  "config.externalPassword.description": "连接外部 OpenCode 进程的密码（支持 env:VAR_NAME 语法从环境变量读取）"
 }

@@ -16,6 +16,10 @@ export interface OpenCodeConfig {
   retryInterval: number;
   /** 终端启动延迟（毫秒） */
   terminalStartupDelay: number;
+  /** 外部进程连接用户名 */
+  username?: string;
+  /** 外部进程连接密码 */
+  password?: string;
 }
 
 /**

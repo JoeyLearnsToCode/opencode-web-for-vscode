@@ -99,6 +99,7 @@
     "no": "No",
     "changeLanguage": "Change Language",
     "connectToProcess": "Connect to Process",
-    "connecting": "Connecting..."
+    "connecting": "Connecting...",
+    "openInBrowser": "Open in Browser"
   }
 }

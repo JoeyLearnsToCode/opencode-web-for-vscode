@@ -10,11 +10,24 @@ export class OpenCodeClient {
   private port: number;
   private baseUrl: string;
   private config: OpenCodeConfig;
+  private authTokenQuery: string;
 
   constructor(port: number, config: OpenCodeConfig) {
     this.port = port;
-    this.baseUrl = `http://localhost:${port}`;
     this.config = config;
+    this.baseUrl = `http://localhost:${port}`;
+    this.authTokenQuery = this.buildAuthTokenQuery(config);
+  }
+
+  /**
+   * 构造 auth_token 查询参数
+   */
+  private buildAuthTokenQuery(config: OpenCodeConfig): string {
+    if (config.username && config.password) {
+      const token = Buffer.from(`${config.username}:${config.password}`).toString('base64');
+      return `?auth_token=${encodeURIComponent(token)}`;
+    }
+    return '';
   }
 
   /**
@@ -38,7 +51,7 @@ export class OpenCodeClient {
 
     const fetchPromise = (async () => {
       try {
-        const url = `${this.baseUrl}${API_ENDPOINTS.HEALTH}`;
+        const url = `${this.baseUrl}${API_ENDPOINTS.HEALTH}${this.authTokenQuery}`;
         console.log(`[OpenCodeClient] 开始健康检查: ${url}, 超时: ${checkTimeout}ms`);
 
         const response = await fetch(url, {
@@ -87,7 +100,7 @@ export class OpenCodeClient {
 
     const fetchPromise = (async () => {
       try {
-        const response = await fetch(`${this.baseUrl}${API_ENDPOINTS.APPEND_PROMPT}`, {
+        const response = await fetch(`${this.baseUrl}${API_ENDPOINTS.APPEND_PROMPT}${this.authTokenQuery}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -120,7 +133,7 @@ export class OpenCodeClient {
 
     const fetchPromise = (async () => {
       try {
-        const response = await fetch(`${this.baseUrl}${API_ENDPOINTS.SUBMIT_PROMPT}`, {
+        const response = await fetch(`${this.baseUrl}${API_ENDPOINTS.SUBMIT_PROMPT}${this.authTokenQuery}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

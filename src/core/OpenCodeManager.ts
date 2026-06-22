@@ -1054,13 +1054,17 @@ export class OpenCodeManager {
     const port = this.configService.getPort();
     const timeout = this.configService.getTimeout();
     const terminalStartupDelay = this.configService.getTerminalStartupDelay();
+    const username = this.configService.getExternalUsername();
+    const password = this.configService.getExternalPassword();
 
     return {
       defaultPort: port,
       healthCheckTimeout: timeout,
       maxRetries: 10,
       retryInterval: 500,
-      terminalStartupDelay
+      terminalStartupDelay,
+      username,
+      password,
     };
   }
 

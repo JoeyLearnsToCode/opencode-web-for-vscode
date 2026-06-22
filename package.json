@@ -287,6 +287,16 @@
           "type": "number",
           "default": 0,
           "description": "%config.terminalStartupDelay.description%"
+        },
+        "opencode-web.externalUsername": {
+          "type": "string",
+          "default": "",
+          "description": "%config.externalUsername.description%"
+        },
+        "opencode-web.externalPassword": {
+          "type": "string",
+          "default": "",
+          "description": "%config.externalPassword.description%"
         }
       }
     }
@@ -296,6 +306,7 @@
     "compile": "webpack",
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
+    "package:vsix": "npm run package && vsce package --no-dependencies --out dist/",
     "test-compile": "tsc -p ./",
     "test-watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",
