@@ -2,13 +2,13 @@
   "name": "opencode-web-integration",
   "displayName": "OpenCode Web Integration",
   "description": "VSCode extension for OpenCode Web (unofficial)",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "hudi",
   "icon": "resources/icons/opencode.png",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/liangqiangWang/opencode-web-for-vscode"
+    "url": "https://github.com/JoeyLearnsToCode/opencode-web-for-vscode"
   },
   "engines": {
     "vscode": "^1.70.0"

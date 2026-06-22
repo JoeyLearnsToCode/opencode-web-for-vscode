@@ -33,22 +33,22 @@ A VSCode extension that integrates OpenCode Web functionality into the sidebar.
 ### Launch OpenCode
 
 1. Use OpenCode Web in the left sidebar
-   <img src="https://raw.githubusercontent.com/liangqiangWang/opencode-web-for-vscode/master/screenshot/side_view.png" width="600"/>
+   <img src="https://raw.githubusercontent.com/JoeyLearnsToCode/opencode-web-for-vscode/master/screenshot/side_view.png" width="600"/>
 
 2. Use OpenCode Web in the editor area
    Besides the left sidebar, you can also display it in the editor area
-   <img src="https://raw.githubusercontent.com/liangqiangWang/opencode-web-for-vscode/master/screenshot/main_web_view.png" width="600"/>
+   <img src="https://raw.githubusercontent.com/JoeyLearnsToCode/opencode-web-for-vscode/master/screenshot/main_web_view.png" width="600"/>
 
 ### Send Code to OpenCode TUI
 
 1. Select code in the editor
 2. Right-click and select `Append to OpenCode Terminal`
 3. Selected code will be sent to OpenCode along with file context
-   <img src="https://raw.githubusercontent.com/liangqiangWang/opencode-web-for-vscode/master/screenshot/send_data.png" width="600"/>
+   <img src="https://raw.githubusercontent.com/JoeyLearnsToCode/opencode-web-for-vscode/master/screenshot/send_data.png" width="600"/>
 
 ### Process Management
 
-<img src="https://raw.githubusercontent.com/liangqiangWang/opencode-web-for-vscode/master/screenshot/en_us/menu_view.png" width="600"/>
+<img src="https://raw.githubusercontent.com/JoeyLearnsToCode/opencode-web-for-vscode/master/screenshot/en_us/menu_view.png" width="600"/>
 
 In the sidebar toolbar:
 - **Refresh Connection**: Refresh the OpenCode Web page
@@ -91,4 +91,4 @@ MIT
 
 ## Support
 
-For issues and feature requests, please visit the [GitHub repository](https://github.com/liangqiangWang/opencode-web-for-vscode).
+For issues and feature requests, please visit the [GitHub repository](https://github.com/JoeyLearnsToCode/opencode-web-for-vscode).

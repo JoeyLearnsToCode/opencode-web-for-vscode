@@ -114,7 +114,7 @@ export function registerWebviewCommands(
   // 问题反馈
   context.subscriptions.push(
     vscode.commands.registerCommand('opencode-web.reportIssue', () => {
-      vscode.env.openExternal(vscode.Uri.parse('https://github.com/liangqiangWang/opencode-web-for-vscode/issues'));
+      vscode.env.openExternal(vscode.Uri.parse('https://github.com/JoeyLearnsToCode/opencode-web-for-vscode/issues'));
     })
   );
 
